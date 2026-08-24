@@ -121,8 +121,8 @@ function RecordsTab() {
                 <td>
                   <span className={`badge ${r.type}`}>{r.type === "in" ? "Check-in" : "Check-out"}</span>
                   {r.flagged && (
-                    <span className="badge flag" style={{ marginLeft: 6 }}>
-                      ⚠ far
+                    <span className="badge flag" style={{ marginLeft: 6 }} title="Recorded from outside this school's GPS coverage area">
+                      ⚠ out of coverage
                     </span>
                   )}
                 </td>

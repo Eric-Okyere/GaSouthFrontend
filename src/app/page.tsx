@@ -66,6 +66,34 @@ export default function DirectoryPage() {
             <div className="l">Schools</div>
           </div>
         </div>
+
+        <div
+          className="card"
+          style={{
+            marginTop: 22,
+            padding: "18px 20px",
+            display: "flex",
+            gap: 16,
+            alignItems: "center",
+            flexWrap: "wrap",
+            background: "var(--surface-2)",
+          }}
+        >
+          {origin && (
+            <div className="qr-wrap no-print" style={{ width: 64, height: 64, flex: "none", border: "1px solid var(--line-soft)" }}>
+              <QrCode value={`${origin}/register`} />
+            </div>
+          )}
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontWeight: 600, fontSize: 15 }}>New teacher? Register your details</div>
+            <p style={{ color: "var(--ink-soft)", fontSize: 13.5, marginTop: 3 }}>
+              One form, any school — scan the code or use the link, once.
+            </p>
+          </div>
+          <Link className="btn btn-primary btn-sm no-print" href="/register">
+            Open registration form
+          </Link>
+        </div>
       </div>
 
       <div

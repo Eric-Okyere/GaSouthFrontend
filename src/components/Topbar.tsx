@@ -37,7 +37,13 @@ export function Topbar() {
           <span className="eyebrow">TEACHER CHECK-IN / CHECK-OUT</span>
         </span>
       </Link>
-      <nav>
+      <nav style={{ display: "flex", gap: 4 }}>
+        <Link
+          href="/register"
+          style={{ fontSize: 13.5, color: "var(--ink-soft)", textDecoration: "none", padding: "8px 10px", borderRadius: 8 }}
+        >
+          Register
+        </Link>
         <Link
           href="/admin"
           style={{ fontSize: 13.5, color: "var(--ink-soft)", textDecoration: "none", padding: "8px 10px", borderRadius: 8 }}

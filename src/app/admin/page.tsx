@@ -35,7 +35,7 @@ function TodayTab() {
         <Tile n={stats.checkins} l="Check-ins today" />
         <Tile n={stats.checkouts} l="Check-outs today" />
         <Tile n={`${stats.schoolsReporting} / ${stats.totalSchools}`} l="Schools reporting" />
-        <Tile n={stats.flagged} l="Flagged entries" />
+        <Tile n={stats.flagged} l="Outside coverage" />
       </div>
       <div className="table-wrap">
         <table>

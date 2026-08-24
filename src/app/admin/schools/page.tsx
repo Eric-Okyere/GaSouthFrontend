@@ -77,14 +77,18 @@ function TeacherRoster({ school }: { school: School }) {
             <tr>
               <th>Staff ID</th>
               <th>Name</th>
+              <th>Class</th>
+              <th>Association</th>
+              <th>Phone</th>
+              <th>Source</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             {teachers && teachers.length === 0 && (
               <tr>
-                <td colSpan={3} className="empty-state">
-                  No roster entries yet — teachers can still check in by typing their name.
+                <td colSpan={7} className="empty-state">
+                  No roster entries yet — teachers can register themselves at /register, or add one below.
                 </td>
               </tr>
             )}
@@ -92,6 +96,12 @@ function TeacherRoster({ school }: { school: School }) {
               <tr key={t.id}>
                 <td className="mono">{t.staffId}</td>
                 <td>{t.name}</td>
+                <td>{t.classTeaching || "—"}</td>
+                <td>{t.association || "—"}</td>
+                <td className="mono">{t.phoneNumber || "—"}</td>
+                <td>
+                  <span className={`badge ${t.source === "self" ? "in" : "muted"}`}>{t.source === "self" ? "self-registered" : "admin-added"}</span>
+                </td>
                 <td>
                   <button className="btn btn-ghost btn-sm" onClick={() => removeTeacher(t.id)}>
                     Remove
@@ -202,6 +212,15 @@ function SchoolsTab() {
                 <button className="btn btn-ghost btn-sm" onClick={() => captureAnchor(s)} disabled={capturingId === s.id}>
                   {capturingId === s.id ? "Locating…" : `📍 ${s.anchorLat != null ? "Re-capture" : "Capture"} GPS`}
                 </button>
+                {s.anchorLat != null ? (
+                  <a className="btn btn-ghost btn-sm" href={`/admin/schools/${s.id}/print`} target="_blank" rel="noopener noreferrer">
+                    🖨 Print QR
+                  </a>
+                ) : (
+                  <button className="btn btn-ghost btn-sm" disabled title="Capture this school's GPS anchor first">
+                    🖨 Print QR
+                  </button>
+                )}
                 <button className="btn btn-ghost btn-sm" onClick={() => renameSchool(s)}>
                   Rename
                 </button>

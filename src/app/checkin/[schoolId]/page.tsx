@@ -195,8 +195,8 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
                     Not you? Switch person
                   </button>
                   <p style={{ fontSize: 12.5, color: "var(--ink-faint)", display: "flex", gap: 7, marginTop: 14 }}>
-                    📍 We’ll ask for your location to confirm you’re on-site. If it’s unavailable, your {next === "in" ? "check-in" : "check-out"} is still
-                    recorded.
+                    📍 We’ll ask for your location to confirm you’re on-site. If it’s unavailable, or you&apos;re outside the school&apos;s
+                    coverage area, your {next === "in" ? "check-in" : "check-out"} is still recorded — just flagged for review.
                   </p>
                 </>
               )}
@@ -211,9 +211,9 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
                     {formatTime(result.at)}
                   </div>
                   {result.flagged && (
-                    <p style={{ fontSize: 12.5, color: "var(--bad)", marginTop: 14 }}>
-                      ⚠ Your location looks far from this school. Recorded anyway — your admin may follow up.
-                    </p>
+                    <div className="error-box" style={{ marginTop: 14 }}>
+                      ⚠ Out of coverage area — you appear to be far from this school. It&apos;s recorded, but your admin may follow up.
+                    </div>
                   )}
                   <Link className="btn btn-ghost btn-block" style={{ marginTop: 18 }} href="/">
                     Done

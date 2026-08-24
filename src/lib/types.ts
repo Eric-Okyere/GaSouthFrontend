@@ -14,6 +14,11 @@ export interface Teacher {
   staffId: string;
   name: string;
   active: boolean;
+  source?: "admin" | "self";
+  dateOfBirth?: string | null;
+  classTeaching?: string;
+  association?: string;
+  phoneNumber?: string;
 }
 
 export interface AttendanceRecord {
