@@ -134,6 +134,14 @@ export interface DirectoryTeacher {
   phoneNumber?: string;
   deviceBound?: boolean;
   deviceBoundAt?: string | null;
+  // Present only when the directory was fetched with ?date= — that day's
+  // check-in/out status for this teacher, so the district directory can
+  // show a present/absent column without a separate request per teacher.
+  attendanceStatus?: {
+    date: string;
+    checkedInAt: string | null;
+    checkedOutAt: string | null;
+  };
 }
 
 export interface TeacherDetailResponse {

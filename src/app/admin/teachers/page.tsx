@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import type { DirectoryTeacher } from "@/lib/types";
+import type { DirectoryTeacher, School } from "@/lib/types";
+import { formatTime, todayStr } from "@/lib/format";
 import { AdminShell } from "@/components/AdminShell";
 import { useToast } from "@/components/Toast";
 
@@ -37,6 +38,12 @@ function SortHeader({
 }
 
 function TeachersTab() {
+  const [schools, setSchools] = useState<School[]>([]);
+  const [schoolId, setSchoolId] = useState("");
+  // Which day's check-in/out status to show alongside the roster — defaults
+  // to today (a quick "who's here right now, district-wide" view). "" means
+  // "All dates": no status column, just the plain roster.
+  const [date, setDate] = useState(todayStr());
   const [teachers, setTeachers] = useState<DirectoryTeacher[] | null>(null);
   const [query, setQuery] = useState("");
   const [activeOnly, setActiveOnly] = useState(false);
@@ -45,12 +52,19 @@ function TeachersTab() {
   const toast = useToast();
 
   useEffect(() => {
+    api.get<School[]>("/api/admin/schools").then((list) => setSchools(list.sort((a, b) => a.name.localeCompare(b.name))));
+  }, []);
+
+  function load() {
+    const q = new URLSearchParams();
+    if (schoolId) q.set("school", schoolId);
+    if (date) q.set("date", date);
     api
-      .get<DirectoryTeacher[]>("/api/admin/teachers")
+      .get<DirectoryTeacher[]>(`/api/admin/teachers?${q.toString()}`)
       .then(setTeachers)
       .catch(() => toast("Could not load the teacher directory.", true));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }
+  useEffect(load, [schoolId, date]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function onSort(field: SortField) {
     if (field === sort) {
@@ -59,6 +73,13 @@ function TeachersTab() {
       setSort(field);
       setDir("asc");
     }
+  }
+
+  function exportUrl() {
+    const q = new URLSearchParams();
+    if (schoolId) q.set("school", schoolId);
+    if (date) q.set("date", date);
+    return `/api/admin/teachers/export?${q.toString()}`;
   }
 
   const filtered = useMemo(() => {
@@ -80,6 +101,35 @@ function TeachersTab() {
 
   return (
     <>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+        <input
+          type="date"
+          value={date}
+          max={todayStr()}
+          onChange={(e) => setDate(e.target.value)}
+          style={{ border: "1.5px solid var(--line)", background: "var(--surface)", borderRadius: 9, padding: "9px 11px", minHeight: 40, fontSize: 13.5 }}
+        />
+        <select
+          value={schoolId}
+          onChange={(e) => setSchoolId(e.target.value)}
+          style={{ border: "1.5px solid var(--line)", background: "var(--surface)", borderRadius: 9, padding: "9px 11px", minHeight: 40, fontSize: 13.5 }}
+        >
+          <option value="">All schools</option>
+          {schools.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+        <button className="btn btn-ghost btn-sm" onClick={() => setDate("")}>
+          All dates
+        </button>
+        <span style={{ flex: 1 }} />
+        <a className="btn btn-primary btn-sm" href={exportUrl()}>
+          ⬇ Export CSV ({teachers ? teachers.length : 0})
+        </a>
+      </div>
+
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
         <input
           type="search"
@@ -106,15 +156,16 @@ function TeachersTab() {
               <SortHeader label="Name" field="name" sort={sort} dir={dir} onSort={onSort} />
               <SortHeader label="Staff ID" field="staffId" sort={sort} dir={dir} onSort={onSort} />
               <SortHeader label="School" field="school" sort={sort} dir={dir} onSort={onSort} />
-              <th>Status</th>
+              <th>Roster</th>
               <th>Device</th>
+              {date && <th>{date === todayStr() ? "Today" : date}</th>}
             </tr>
           </thead>
           <tbody>
             {teachers && filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="empty-state">
-                  {teachers.length === 0 ? "No teachers registered yet." : "No teachers match your search."}
+                <td colSpan={date ? 6 : 5} className="empty-state">
+                  {teachers.length === 0 ? "No teachers match these filters." : "No teachers match your search."}
                 </td>
               </tr>
             )}
@@ -133,6 +184,17 @@ function TeachersTab() {
                 <td>
                   {t.deviceBound ? <span className="badge in">✓ bound</span> : <span className="badge muted">not bound</span>}
                 </td>
+                {date && (
+                  <td>
+                    {t.attendanceStatus?.checkedInAt ? (
+                      <span className="badge in" title={`Checked in ${formatTime(t.attendanceStatus.checkedInAt)}`}>
+                        present
+                      </span>
+                    ) : (
+                      <span className="badge flag">absent</span>
+                    )}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
