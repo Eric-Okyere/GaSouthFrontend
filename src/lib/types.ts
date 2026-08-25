@@ -116,3 +116,33 @@ export interface RosterStatusResponse {
   checkedIn: CheckedInTeacher[];
   notCheckedIn: NotCheckedInTeacher[];
 }
+
+// A teacher as listed in the district-wide directory (/admin/teachers) —
+// same underlying roster record as `Teacher` above, but with the school
+// resolved to {id, name} instead of a bare id, since this list spans every
+// school at once and needs to show/sort/search by school name.
+export interface DirectoryTeacher {
+  id: string;
+  staffId: string;
+  name: string;
+  school: { id: string; name: string } | null;
+  active: boolean;
+  source?: "admin" | "self" | "checkin";
+  dateOfBirth?: string | null;
+  classTeaching?: string;
+  association?: string;
+  phoneNumber?: string;
+  deviceBound?: boolean;
+  deviceBoundAt?: string | null;
+}
+
+export interface TeacherDetailResponse {
+  teacher: DirectoryTeacher;
+  attendance: {
+    start: string;
+    end: string;
+    totalSchoolDays: number;
+    presentDays: number;
+    absentDays: number;
+  };
+}

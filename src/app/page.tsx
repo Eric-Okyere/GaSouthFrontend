@@ -7,8 +7,10 @@ import type { School } from "@/lib/types";
 import { Topbar } from "@/components/Topbar";
 import { QrCode } from "@/components/QrCode";
 import { useToast } from "@/components/Toast";
+import { useRequireAdmin } from "@/lib/useRequireAdmin";
 
 export default function DirectoryPage() {
+  const { admin, checked } = useRequireAdmin();
   const [schools, setSchools] = useState<School[] | null>(null);
   const [query, setQuery] = useState("");
   const [origin, setOrigin] = useState("");
@@ -48,6 +50,19 @@ export default function DirectoryPage() {
       toast("Could not copy — long-press the link instead.", true);
     }
   }
+
+  // This page is district-admin-only (see proxy.ts) — the cookie-presence
+  // redirect there is the fast path; this is the real check, confirming the
+  // session actually still works before showing anything.
+  if (!checked) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+        <Topbar />
+        <p style={{ padding: 24, color: "var(--ink-faint)" }}>Loading…</p>
+      </div>
+    );
+  }
+  if (!admin) return null; // redirecting to /admin/login
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
