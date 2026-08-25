@@ -1,22 +1,33 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { api } from "@/lib/api";
-import type { TodayStats } from "@/lib/types";
+import type { OpenCheckin, TodayStats } from "@/lib/types";
 import { AdminShell } from "@/components/AdminShell";
 import { useToast } from "@/components/Toast";
 
-function Tile({ n, l }: { n: string | number; l: string }) {
-  return (
-    <div className="stat-tile">
-      <div className="n mono">{n}</div>
+function Tile({ n, l, href, warn }: { n: string | number; l: string; href?: string; warn?: boolean }) {
+  const content = (
+    <div className="stat-tile" style={warn && Number(n) > 0 ? { borderColor: "var(--bad)" } : undefined}>
+      <div className="n mono" style={warn && Number(n) > 0 ? { color: "var(--bad)" } : undefined}>
+        {n}
+      </div>
       <div className="l">{l}</div>
     </div>
+  );
+  return href ? (
+    <Link href={href} style={{ textDecoration: "none", color: "inherit" }}>
+      {content}
+    </Link>
+  ) : (
+    content
   );
 }
 
 function TodayTab() {
   const [stats, setStats] = useState<TodayStats | null>(null);
+  const [openCount, setOpenCount] = useState<number | null>(null);
   const toast = useToast();
 
   useEffect(() => {
@@ -24,6 +35,10 @@ function TodayTab() {
       .get<TodayStats>("/api/admin/stats/today")
       .then(setStats)
       .catch(() => toast("Could not load today's stats.", true));
+    api
+      .get<{ openCheckins: OpenCheckin[] }>("/api/admin/open-checkins")
+      .then((res) => setOpenCount(res.openCheckins.length))
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -35,7 +50,7 @@ function TodayTab() {
         <Tile n={stats.checkins} l="Check-ins today" />
         <Tile n={stats.checkouts} l="Check-outs today" />
         <Tile n={`${stats.schoolsReporting} / ${stats.totalSchools}`} l="Schools reporting" />
-        <Tile n={stats.flagged} l="Outside coverage" />
+        <Tile n={openCount ?? "–"} l="Still checked in" href="/admin/alerts" warn />
       </div>
       <div className="table-wrap">
         <table>

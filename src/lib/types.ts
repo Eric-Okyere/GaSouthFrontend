@@ -14,11 +14,14 @@ export interface Teacher {
   staffId: string;
   name: string;
   active: boolean;
-  source?: "admin" | "self";
+  source?: "admin" | "self" | "checkin";
   dateOfBirth?: string | null;
   classTeaching?: string;
   association?: string;
   phoneNumber?: string;
+  hasPin?: boolean;
+  pinLocked?: boolean;
+  deviceCount?: number;
 }
 
 export interface AttendanceRecord {
@@ -30,6 +33,7 @@ export interface AttendanceRecord {
   verified: boolean;
   distanceM: number | null;
   flagged: boolean;
+  newDevice: boolean;
   at: string;
   dateKey: string;
 }
@@ -40,6 +44,9 @@ export interface StatusResponse {
   next: "in" | "out" | "done";
   checkedInAt: string | null;
   checkedOutAt: string | null;
+  hasPin: boolean;
+  locked: boolean;
+  lockedUntil: string | null;
 }
 
 export interface TodayStats {
@@ -56,4 +63,35 @@ export interface AdminUser {
   id: string;
   username: string;
   name: string;
+}
+
+export interface SchoolTotals {
+  checkins: number;
+  checkouts: number;
+}
+
+export interface TeacherAttendanceSummary {
+  id: string;
+  staffId: string;
+  name: string;
+  phoneNumber: string;
+  totalSchoolDays: number;
+  presentDays: number;
+  absentDays: number;
+}
+
+export interface AttendanceSummaryResponse {
+  school: { id: string; name: string };
+  start: string;
+  end: string;
+  teachers: TeacherAttendanceSummary[];
+}
+
+export interface OpenCheckin {
+  id: string;
+  school: { id: string; name: string } | null;
+  staffId: string;
+  name: string;
+  checkedInAt: string;
+  phoneNumber: string;
 }

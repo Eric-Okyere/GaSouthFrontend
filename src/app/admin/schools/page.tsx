@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import type { School, Teacher } from "@/lib/types";
 import { getPosition } from "@/lib/geo";
 import { AdminShell } from "@/components/AdminShell";
 import { useToast } from "@/components/Toast";
+import { ContactButtons } from "@/components/ContactButtons";
 
 function TeacherRoster({ school }: { school: School }) {
   const [teachers, setTeachers] = useState<Teacher[] | null>(null);
@@ -41,6 +43,17 @@ function TeacherRoster({ school }: { school: School }) {
     if (!confirm("Remove this teacher from the roster?")) return;
     await api.delete(`/api/admin/teachers/${id}`).catch(() => toast("Could not remove teacher.", true));
     load();
+  }
+
+  async function resetPin(t: Teacher) {
+    if (!confirm(`Reset ${t.name}'s PIN? They'll be asked to set a new one next time they check in or out.`)) return;
+    try {
+      await api.post(`/api/admin/teachers/${t.id}/reset-pin`);
+      toast("PIN reset. They'll set a new one on their next check-in.");
+      load();
+    } catch (err) {
+      toast(err instanceof ApiError ? err.message : "Could not reset PIN.", true);
+    }
   }
 
   async function importBulk() {
@@ -79,15 +92,16 @@ function TeacherRoster({ school }: { school: School }) {
               <th>Name</th>
               <th>Class</th>
               <th>Association</th>
-              <th>Phone</th>
+              <th>Contact</th>
               <th>Source</th>
+              <th>PIN</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             {teachers && teachers.length === 0 && (
               <tr>
-                <td colSpan={7} className="empty-state">
+                <td colSpan={8} className="empty-state">
                   No roster entries yet — teachers can register themselves at /register, or add one below.
                 </td>
               </tr>
@@ -98,11 +112,35 @@ function TeacherRoster({ school }: { school: School }) {
                 <td>{t.name}</td>
                 <td>{t.classTeaching || "—"}</td>
                 <td>{t.association || "—"}</td>
-                <td className="mono">{t.phoneNumber || "—"}</td>
+                <td>
+                  <ContactButtons phone={t.phoneNumber} />
+                </td>
                 <td>
                   <span className={`badge ${t.source === "self" ? "in" : "muted"}`}>{t.source === "self" ? "self-registered" : "admin-added"}</span>
                 </td>
                 <td>
+                  {t.hasPin ? (
+                    <span className={`badge ${t.pinLocked ? "flag" : "in"}`} title={t.pinLocked ? "Temporarily locked out after repeated wrong PINs" : "Has set a PIN"}>
+                      {t.pinLocked ? "🔒 locked" : "✓ set"}
+                    </span>
+                  ) : (
+                    <span className="badge muted">not set</span>
+                  )}
+                  {t.hasPin && (t.deviceCount ?? 0) > 1 && (
+                    <div
+                      style={{ fontSize: 11, color: "var(--ink-faint)", marginTop: 4 }}
+                      title="How many different browsers/phones have successfully used this PIN — worth a look if it seems high for one person."
+                    >
+                      {t.deviceCount} devices
+                    </div>
+                  )}
+                </td>
+                <td style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {t.hasPin && (
+                    <button className="btn btn-ghost btn-sm" onClick={() => resetPin(t)}>
+                      Reset PIN
+                    </button>
+                  )}
                   <button className="btn btn-ghost btn-sm" onClick={() => removeTeacher(t.id)}>
                     Remove
                   </button>
@@ -209,6 +247,9 @@ function SchoolsTab() {
                 <button className="btn btn-ghost btn-sm" onClick={() => setExpanded(expanded === s.id ? null : s.id)}>
                   {expanded === s.id ? "Hide roster" : "Manage roster"}
                 </button>
+                <Link className="btn btn-ghost btn-sm" href={`/admin/schools/${s.id}/summary`}>
+                  📊 Summary
+                </Link>
                 <button className="btn btn-ghost btn-sm" onClick={() => captureAnchor(s)} disabled={capturingId === s.id}>
                   {capturingId === s.id ? "Locating…" : `📍 ${s.anchorLat != null ? "Re-capture" : "Capture"} GPS`}
                 </button>
