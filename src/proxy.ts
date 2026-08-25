@@ -33,6 +33,9 @@ export const config = {
   // Runs on every page request except: the API proxy (has its own,
   // independent auth per-route on the backend — must never be caught by a
   // redirect meant for HTML pages), Next.js's own static/image assets, and
-  // the favicon.
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  // the favicon/app-icon files — Next.js serves `src/app/favicon.ico` and
+  // `src/app/icon.png` as top-level routes by file convention, so without
+  // this exclusion a signed-out browser's request for either one gets
+  // caught here and redirected to /admin/login instead of the image.
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|icon.png).*)"],
 };

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { ToastProvider } from "@/components/Toast";
+import { PoweredByFooter } from "@/components/PoweredByFooter";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -36,6 +37,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body suppressHydrationWarning>
         <ToastProvider>{children}</ToastProvider>
+        {/* Site-wide, not per-page — added once here so every route (home,
+            register, check-in, every admin page) gets it automatically,
+            rather than needing to be threaded into each page individually.
+            `no-print` (see PoweredByFooter) so it doesn't appear on a
+            printed QR poster or attendance export. */}
+        <PoweredByFooter />
       </body>
     </html>
   );
