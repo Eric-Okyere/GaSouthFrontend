@@ -13,7 +13,6 @@ type Step = "loading" | "notfound" | "identify" | "action" | "done" | "already-d
 interface ActionResult {
   type: "in" | "out";
   at: string;
-  flagged: boolean;
 }
 
 export default function CheckinPage({ params }: { params: Promise<{ schoolId: string }> }) {
@@ -97,7 +96,7 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
           lng: coords?.longitude,
         }
       );
-      setResult({ type: res.type, at: res.at, flagged: res.flagged });
+      setResult({ type: res.type, at: res.at });
       setStep("done");
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
@@ -195,8 +194,8 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
                     Not you? Switch person
                   </button>
                   <p style={{ fontSize: 12.5, color: "var(--ink-faint)", display: "flex", gap: 7, marginTop: 14 }}>
-                    📍 We’ll ask for your location to confirm you’re on-site. If it’s unavailable, or you&apos;re outside the school&apos;s
-                    coverage area, your {next === "in" ? "check-in" : "check-out"} is still recorded — just flagged for review.
+                    📍 We&apos;ll check your location to confirm you&apos;re on-site. If you&apos;re outside this school&apos;s coverage area,
+                    we can&apos;t record your {next === "in" ? "check-in" : "check-out"} — please go to the school and try again.
                   </p>
                 </>
               )}
@@ -210,11 +209,6 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
                   <div className="mono" style={{ fontSize: 34, fontWeight: 500, marginTop: 4 }}>
                     {formatTime(result.at)}
                   </div>
-                  {result.flagged && (
-                    <div className="error-box" style={{ marginTop: 14 }}>
-                      ⚠ Out of coverage area — you appear to be far from this school. It&apos;s recorded, but your admin may follow up.
-                    </div>
-                  )}
                   <Link className="btn btn-ghost btn-block" style={{ marginTop: 18 }} href="/">
                     Done
                   </Link>

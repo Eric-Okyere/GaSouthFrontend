@@ -1,6 +1,24 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { api } from "@/lib/api";
+import type { AdminUser } from "@/lib/types";
 
 export function Topbar() {
+  // Purely a visual hint ("is an admin currently signed in on this device"),
+  // not a security check — the real gate is the server-side proxy redirect
+  // on /admin/* plus AdminShell's own check. A 401 here just means signed
+  // out, so it's swallowed rather than surfaced as an error.
+  const [admin, setAdmin] = useState<AdminUser | null>(null);
+
+  useEffect(() => {
+    api
+      .get<{ admin: AdminUser }>("/api/admin/auth/me")
+      .then((res) => setAdmin(res.admin))
+      .catch(() => {});
+  }, []);
+
   return (
     <div
       className="no-print"
@@ -37,7 +55,7 @@ export function Topbar() {
           <span className="eyebrow">TEACHER CHECK-IN / CHECK-OUT</span>
         </span>
       </Link>
-      <nav style={{ display: "flex", gap: 4 }}>
+      <nav style={{ display: "flex", alignItems: "center", gap: 4 }}>
         <Link
           href="/register"
           style={{ fontSize: 13.5, color: "var(--ink-soft)", textDecoration: "none", padding: "8px 10px", borderRadius: 8 }}
@@ -46,9 +64,22 @@ export function Topbar() {
         </Link>
         <Link
           href="/admin"
-          style={{ fontSize: 13.5, color: "var(--ink-soft)", textDecoration: "none", padding: "8px 10px", borderRadius: 8 }}
+          title={admin ? `Signed in as ${admin.name}` : "Sign in to the admin dashboard"}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 7,
+            fontSize: 13.5,
+            fontWeight: admin ? 600 : 400,
+            color: admin ? "var(--good)" : "var(--ink-soft)",
+            textDecoration: "none",
+            padding: "8px 10px",
+            borderRadius: 8,
+            background: admin ? "var(--good-bg)" : "transparent",
+          }}
         >
-          Admin
+          {admin && <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--good)", flex: "none" }} />}
+          {admin ? `Admin · ${admin.name}` : "Admin"}
         </Link>
       </nav>
     </div>
