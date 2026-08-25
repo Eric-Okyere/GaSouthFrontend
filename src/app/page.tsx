@@ -38,13 +38,20 @@ export default function DirectoryPage() {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [schools, query]);
 
-  function checkinUrl(id: string) {
-    return `${origin}/checkin/${id}`;
+  // A school's short code is what actually gets printed/typed day to day —
+  // much shorter than its Mongo id — so every check-in link/QR here prefers
+  // it and only falls back to the id for a school that hasn't been assigned
+  // one yet.
+  function checkinPath(s: School) {
+    return `/checkin/${s.code || s.id}`;
+  }
+  function checkinUrl(s: School) {
+    return `${origin}${checkinPath(s)}`;
   }
 
-  async function copyLink(id: string) {
+  async function copyLink(s: School) {
     try {
-      await navigator.clipboard.writeText(checkinUrl(id));
+      await navigator.clipboard.writeText(checkinUrl(s));
       toast("Link copied.");
     } catch {
       toast("Could not copy — long-press the link instead.", true);
@@ -167,13 +174,13 @@ export default function DirectoryPage() {
         {filtered.map((s) => (
           <div key={s.id} className="card print-page" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
             <div className="qr-wrap" style={{ width: 88, height: 88, border: "1px solid var(--line-soft)" }}>
-              {origin && <QrCode value={checkinUrl(s.id)} />}
+              {origin && <QrCode value={checkinUrl(s)} />}
             </div>
             {origin && (
               <div>
                 <div style={{ fontSize: 10.5, color: "var(--ink-faint)" }}>Can&apos;t scan? Use this link:</div>
-                <a href={checkinUrl(s.id)} className="mono" style={{ fontSize: 10.5, color: "var(--accent)", wordBreak: "break-all", display: "inline-block", marginTop: 2 }}>
-                  {checkinUrl(s.id).replace(/^https?:\/\//, "")}
+                <a href={checkinUrl(s)} className="mono" style={{ fontSize: 10.5, color: "var(--accent)", wordBreak: "break-all", display: "inline-block", marginTop: 2 }}>
+                  {checkinUrl(s).replace(/^https?:\/\//, "")}
                 </a>
               </div>
             )}
@@ -182,10 +189,10 @@ export default function DirectoryPage() {
               {s.hasAnchor ? "📍 anchored" : "no GPS anchor"}
             </div>
             <div className="no-print" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: "auto" }}>
-              <Link className="btn btn-primary btn-sm" href={`/checkin/${s.id}`}>
+              <Link className="btn btn-primary btn-sm" href={checkinPath(s)}>
                 Open check-in
               </Link>
-              <button className="btn btn-ghost btn-sm" onClick={() => copyLink(s.id)}>
+              <button className="btn btn-ghost btn-sm" onClick={() => copyLink(s)}>
                 Copy link
               </button>
             </div>

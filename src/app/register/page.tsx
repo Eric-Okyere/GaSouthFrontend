@@ -44,8 +44,21 @@ function RegisterForm() {
   useEffect(() => {
     api
       .get<School[]>("/api/schools")
-      .then((list) => setSchools(list.sort((a, b) => a.name.localeCompare(b.name))))
+      .then((list) => {
+        const sorted = list.sort((a, b) => a.name.localeCompare(b.name));
+        setSchools(sorted);
+        // The `?school=` param on a "Register first" link (from the
+        // check-in page, or typed by hand) now usually carries a school's
+        // short code rather than its Mongo id — the <select> below still
+        // keys its options by id, so resolve a code to the matching id
+        // once the list is in.
+        if (preselectedSchool && !sorted.some((s) => s.id === preselectedSchool)) {
+          const byCode = sorted.find((s) => s.code && s.code.toUpperCase() === preselectedSchool.toUpperCase());
+          if (byCode) setForm((f) => ({ ...f, school: byCode.id }));
+        }
+      })
       .catch(() => setError("Could not load the school list. Please reload the page."));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {

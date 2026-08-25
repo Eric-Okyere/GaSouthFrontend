@@ -2,6 +2,11 @@ export interface School {
   id: string;
   name: string;
   active?: boolean;
+  // Short, typeable stand-in for `id` in check-in links and QR codes —
+  // e.g. "G7K2P" instead of the full Mongo id. Always present once a
+  // school has been read at least once through an admin/directory listing
+  // (see backend/src/utils/schoolCode.js); falls back to `id` until then.
+  code?: string | null;
   hasAnchor?: boolean;
   anchorLat?: number | null;
   anchorLng?: number | null;
