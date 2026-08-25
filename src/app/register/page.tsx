@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import type { School } from "@/lib/types";
 import { Topbar } from "@/components/Topbar";
@@ -30,9 +31,12 @@ const EMPTY: FormState = {
   phoneNumber: "",
 };
 
-export default function RegisterPage() {
+function RegisterForm() {
+  const params = useSearchParams();
+  const preselectedSchool = params.get("school") || "";
+
   const [schools, setSchools] = useState<School[] | null>(null);
-  const [form, setForm] = useState<FormState>(EMPTY);
+  const [form, setForm] = useState<FormState>({ ...EMPTY, school: preselectedSchool });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{ name: string; staffId: string; schoolName: string; updated: boolean } | null>(null);
@@ -182,5 +186,13 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<p style={{ color: "var(--ink-faint)" }}>Loading…</p>}>
+      <RegisterForm />
+    </Suspense>
   );
 }

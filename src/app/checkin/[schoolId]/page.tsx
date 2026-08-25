@@ -9,7 +9,7 @@ import { formatTime } from "@/lib/format";
 import { Topbar } from "@/components/Topbar";
 
 type SchoolInfo = { id: string; name: string; todayCount: number };
-type Step = "loading" | "notfound" | "identify" | "action" | "done" | "already-done" | "device-mismatch";
+type Step = "loading" | "notfound" | "identify" | "not-registered" | "action" | "done" | "already-done" | "device-mismatch";
 
 interface ActionResult {
   type: "in" | "out";
@@ -21,12 +21,12 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
 
   const [school, setSchool] = useState<SchoolInfo | null>(null);
   const [step, setStep] = useState<Step>("loading");
-  const [name, setName] = useState("");
   const [staffId, setStaffId] = useState("");
   const [verifiedName, setVerifiedName] = useState<string | null>(null);
   const [next, setNext] = useState<"in" | "out">("in");
   const [checkedInAt, setCheckedInAt] = useState<string | null>(null);
   const [checkedOutAt, setCheckedOutAt] = useState<string | null>(null);
+  const [wrongSchool, setWrongSchool] = useState(false);
   const [result, setResult] = useState<ActionResult | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +38,6 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
       // Restoring a browser-only (sessionStorage) draft right after mount is
       // deliberate, not a mistake the lint rule needs to flag.
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (draft.name) setName(draft.name);
       if (draft.staffId) setStaffId(draft.staffId);
     } catch {
       // ignore malformed draft
@@ -55,21 +54,28 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
 
   async function handleContinue(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !staffId.trim()) {
-      setError("Please enter your name and staff number.");
+    if (!staffId.trim()) {
+      setError("Please enter your staff number.");
       return;
     }
     setError(null);
-    sessionStorage.setItem(`gsta_draft_${schoolId}`, JSON.stringify({ name, staffId }));
+    sessionStorage.setItem(`gsta_draft_${schoolId}`, JSON.stringify({ staffId }));
 
     try {
       const status = await api.get<{
+        registered: boolean;
+        wrongSchool: boolean;
         verifiedName: string | null;
         next: "in" | "out" | "done";
         checkedInAt: string | null;
         checkedOutAt: string | null;
         deviceBound: boolean;
       }>(`/api/schools/${schoolId}/status?staffId=${encodeURIComponent(staffId)}`);
+      if (!status.registered) {
+        setWrongSchool(status.wrongSchool);
+        setStep("not-registered");
+        return;
+      }
       setVerifiedName(status.verifiedName);
       setCheckedInAt(status.checkedInAt);
       setCheckedOutAt(status.checkedOutAt);
@@ -98,7 +104,6 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
         distanceM: number | null;
       }>(`/api/schools/${schoolId}/attendance`, {
         staffId,
-        name,
         lat: coords?.latitude,
         lng: coords?.longitude,
         deviceToken: getDeviceToken(),
@@ -108,7 +113,13 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
         setStep("already-done");
-      } else if (err instanceof ApiError && err.status === 403) {
+      } else if (err instanceof ApiError && err.body?.wrongSchool) {
+        setWrongSchool(true);
+        setStep("not-registered");
+      } else if (err instanceof ApiError && err.body?.notRegistered) {
+        setWrongSchool(false);
+        setStep("not-registered");
+      } else if (err instanceof ApiError && err.body?.deviceMismatch) {
         setStep("device-mismatch");
       } else {
         setError(err instanceof ApiError ? err.message : "Could not save. Please try again.");
@@ -169,18 +180,34 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
               {step === "identify" && (
                 <form onSubmit={handleContinue}>
                   <div className="field">
-                    <label htmlFor="tName">Full name</label>
-                    <input id="tName" type="text" autoComplete="name" placeholder="e.g. Comfort Ansah" value={name} onChange={(e) => setName(e.target.value)} />
-                  </div>
-                  <div className="field">
                     <label htmlFor="tStaff">Staff / GES number</label>
                     <input id="tStaff" type="text" autoComplete="off" placeholder="e.g. GES-0123456" value={staffId} onChange={(e) => setStaffId(e.target.value)} />
-                    <span className="hint">Ask your head teacher if you don’t know yours.</span>
+                    <span className="hint">
+                      Not registered yet? <Link href={`/register?school=${schoolId}`}>Register first</Link>, then come back here.
+                    </span>
                   </div>
                   <button type="submit" className="btn btn-primary btn-block btn-lg">
                     Continue
                   </button>
                 </form>
+              )}
+
+              {step === "not-registered" && (
+                <>
+                  <div className="error-box">
+                    {wrongSchool
+                      ? "This staff ID is registered at a different school. Please scan the QR code for your own school."
+                      : "This staff ID isn't registered yet. Please register first, then come back and check in."}
+                  </div>
+                  {!wrongSchool && (
+                    <Link className="btn btn-primary btn-block" style={{ marginTop: 14 }} href={`/register?school=${schoolId}`}>
+                      Register now
+                    </Link>
+                  )}
+                  <button className="btn btn-ghost btn-block" style={{ marginTop: 10 }} onClick={switchPerson}>
+                    Try a different staff ID
+                  </button>
+                </>
               )}
 
               {step === "action" && (
@@ -192,7 +219,7 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
                     </div>
                   )}
                   <p style={{ marginTop: 12, fontSize: 15 }}>
-                    Hi <strong>{verifiedName || name}</strong> — ready to {next === "in" ? "check in" : "check out"}?
+                    Hi <strong>{verifiedName}</strong> — ready to {next === "in" ? "check in" : "check out"}?
                   </p>
 
                   <div style={{ marginTop: 16 }}>
@@ -252,7 +279,7 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
                     </div>
                   )}
                   <p style={{ marginTop: 16, color: "var(--ink-soft)", fontSize: 14 }}>
-                    You’ve completed attendance for today, {verifiedName || name || "there"}. See you tomorrow!
+                    You’ve completed attendance for today, {verifiedName || "there"}. See you tomorrow!
                   </p>
                   <button className="btn btn-ghost btn-block" style={{ marginTop: 14 }} onClick={switchPerson}>
                     Not you? Switch person

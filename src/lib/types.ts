@@ -38,6 +38,8 @@ export interface AttendanceRecord {
 
 export interface StatusResponse {
   staffId: string;
+  registered: boolean;
+  wrongSchool: boolean;
   verifiedName: string | null;
   next: "in" | "out" | "done";
   checkedInAt: string | null;
@@ -90,4 +92,27 @@ export interface OpenCheckin {
   name: string;
   checkedInAt: string;
   phoneNumber: string;
+}
+
+export interface CheckedInTeacher {
+  id: string;
+  staffId: string;
+  name: string;
+  phoneNumber: string;
+  checkedInAt: string;
+  checkedOutAt: string | null;
+}
+
+export interface NotCheckedInTeacher {
+  id: string;
+  staffId: string;
+  name: string;
+  phoneNumber: string;
+}
+
+export interface RosterStatusResponse {
+  school: { id: string; name: string };
+  date: string;
+  checkedIn: CheckedInTeacher[];
+  notCheckedIn: NotCheckedInTeacher[];
 }
