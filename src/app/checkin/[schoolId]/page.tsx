@@ -9,12 +9,11 @@ import { formatTime } from "@/lib/format";
 import { Topbar } from "@/components/Topbar";
 
 type SchoolInfo = { id: string; name: string; todayCount: number };
-type Step = "loading" | "notfound" | "identify" | "action" | "done" | "already-done" | "locked";
+type Step = "loading" | "notfound" | "identify" | "action" | "done" | "already-done" | "device-mismatch";
 
 interface ActionResult {
   type: "in" | "out";
   at: string;
-  newDevice: boolean;
 }
 
 export default function CheckinPage({ params }: { params: Promise<{ schoolId: string }> }) {
@@ -31,13 +30,6 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
   const [result, setResult] = useState<ActionResult | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Anti-impersonation PIN: a teacher chooses one the first time they ever
-  // check in, then re-enters it every time after. hasPin (from the status
-  // lookup) decides which of the two the "action" step shows.
-  const [hasPin, setHasPin] = useState(false);
-  const [pin, setPin] = useState("");
-  const [pinConfirm, setPinConfirm] = useState("");
-  const [lockedMessage, setLockedMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const draftKey = `gsta_draft_${schoolId}`;
@@ -76,20 +68,12 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
         next: "in" | "out" | "done";
         checkedInAt: string | null;
         checkedOutAt: string | null;
-        hasPin: boolean;
-        locked: boolean;
-        lockedUntil: string | null;
+        deviceBound: boolean;
       }>(`/api/schools/${schoolId}/status?staffId=${encodeURIComponent(staffId)}`);
       setVerifiedName(status.verifiedName);
       setCheckedInAt(status.checkedInAt);
       setCheckedOutAt(status.checkedOutAt);
-      setHasPin(status.hasPin);
-      setPin("");
-      setPinConfirm("");
-      if (status.locked) {
-        setLockedMessage("Too many incorrect PIN attempts on this staff ID. Please wait a while and try again.");
-        setStep("locked");
-      } else if (status.next === "done") {
+      if (status.next === "done") {
         setStep("already-done");
       } else {
         setNext(status.next);
@@ -102,16 +86,6 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
 
   async function handleAction() {
     setError(null);
-
-    if (!/^\d{4,6}$/.test(pin)) {
-      setError(hasPin ? "Enter your 4–6 digit PIN." : "Choose a 4–6 digit PIN.");
-      return;
-    }
-    if (!hasPin && pin !== pinConfirm) {
-      setError("PIN and confirmation do not match.");
-      return;
-    }
-
     setSaving(true);
     const coords = await getPosition(8000);
     try {
@@ -122,32 +96,21 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
         verified: boolean;
         flagged: boolean;
         distanceM: number | null;
-        newDevice: boolean;
       }>(`/api/schools/${schoolId}/attendance`, {
         staffId,
         name,
-        pin,
-        pinConfirm: hasPin ? undefined : pinConfirm,
         lat: coords?.latitude,
         lng: coords?.longitude,
         deviceToken: getDeviceToken(),
       });
-      setResult({ type: res.type, at: res.at, newDevice: res.newDevice });
-      setPin("");
-      setPinConfirm("");
+      setResult({ type: res.type, at: res.at });
       setStep("done");
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
         setStep("already-done");
-      } else if (err instanceof ApiError && err.status === 423) {
-        setLockedMessage(err.message);
-        setStep("locked");
+      } else if (err instanceof ApiError && err.status === 403) {
+        setStep("device-mismatch");
       } else {
-        // Wrong/invalid PIN or a mismatched confirmation — let them try
-        // again without losing their place, but always clear the PIN
-        // fields so a wrong guess is never sitting in the box.
-        setPin("");
-        setPinConfirm("");
         setError(err instanceof ApiError ? err.message : "Could not save. Please try again.");
       }
     } finally {
@@ -158,8 +121,6 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
   function switchPerson() {
     setStep("identify");
     setError(null);
-    setPin("");
-    setPinConfirm("");
   }
 
   return (
@@ -234,68 +195,11 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
                     Hi <strong>{verifiedName || name}</strong> — ready to {next === "in" ? "check in" : "check out"}?
                   </p>
 
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleAction();
-                    }}
-                  >
-                    {hasPin ? (
-                      <div className="field" style={{ marginTop: 16 }}>
-                        <label htmlFor="tPin">Your PIN</label>
-                        <input
-                          id="tPin"
-                          type="password"
-                          inputMode="numeric"
-                          autoComplete="off"
-                          maxLength={6}
-                          placeholder="••••"
-                          value={pin}
-                          onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-                        />
-                        <span className="hint">Only you know this — it&apos;s what proves this check-{next} is really you.</span>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="field" style={{ marginTop: 16 }}>
-                          <label htmlFor="tPin">Choose a PIN</label>
-                          <input
-                            id="tPin"
-                            type="password"
-                            inputMode="numeric"
-                            autoComplete="off"
-                            maxLength={6}
-                            placeholder="4–6 digits"
-                            value={pin}
-                            onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-                          />
-                          <span className="hint">
-                            This is a first-time setup — pick a private 4–6 digit PIN. You&apos;ll enter it every time you check in or out, so
-                            nobody else can do it for you.
-                          </span>
-                        </div>
-                        <div className="field">
-                          <label htmlFor="tPinConfirm">Confirm PIN</label>
-                          <input
-                            id="tPinConfirm"
-                            type="password"
-                            inputMode="numeric"
-                            autoComplete="off"
-                            maxLength={6}
-                            placeholder="Re-enter your PIN"
-                            value={pinConfirm}
-                            onChange={(e) => setPinConfirm(e.target.value.replace(/\D/g, ""))}
-                          />
-                        </div>
-                      </>
-                    )}
-
-                    <div style={{ marginTop: 10 }}>
-                      <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={saving}>
-                        {saving ? "Saving…" : next === "in" ? "Check In" : "Check Out"}
-                      </button>
-                    </div>
-                  </form>
+                  <div style={{ marginTop: 16 }}>
+                    <button type="button" className="btn btn-primary btn-block btn-lg" disabled={saving} onClick={handleAction}>
+                      {saving ? "Saving…" : next === "in" ? "Check In" : "Check Out"}
+                    </button>
+                  </div>
                   <button className="btn btn-ghost btn-block" style={{ marginTop: 10 }} onClick={switchPerson}>
                     Not you? Switch person
                   </button>
@@ -306,9 +210,12 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
                 </>
               )}
 
-              {step === "locked" && (
+              {step === "device-mismatch" && (
                 <>
-                  <div className="error-box">{lockedMessage}</div>
+                  <div className="error-box">
+                    This device isn&apos;t recognized for this staff ID. Please check in from the phone you first used, or ask your school
+                    admin to reset your device.
+                  </div>
                   <button className="btn btn-ghost btn-block" style={{ marginTop: 14 }} onClick={switchPerson}>
                     Not you? Switch person
                   </button>
@@ -324,12 +231,6 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
                   <div className="mono" style={{ fontSize: 34, fontWeight: 500, marginTop: 4 }}>
                     {formatTime(result.at)}
                   </div>
-                  {result.newDevice && (
-                    <p style={{ fontSize: 12.5, color: "var(--ink-faint)", marginTop: 10 }}>
-                      This was from a phone we haven&apos;t seen you use before — normal if it&apos;s new or you cleared your browser. Your school
-                      admin can see this too.
-                    </p>
-                  )}
                   <Link className="btn btn-ghost btn-block" style={{ marginTop: 18 }} href="/">
                     Done
                   </Link>

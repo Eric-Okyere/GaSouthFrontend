@@ -23,7 +23,6 @@ function RecordsTab() {
   const [date, setDate] = useState(params.get("date") ?? (initialStaffId ? "" : todayStr()));
   const [schoolId, setSchoolId] = useState(params.get("school") || "");
   const [staffId, setStaffId] = useState(initialStaffId);
-  const [newDeviceOnly, setNewDeviceOnly] = useState(params.get("newDevice") === "true");
   const [records, setRecords] = useState<AttendanceRecord[] | null>(null);
   const [total, setTotal] = useState(0);
   const toast = useToast();
@@ -37,7 +36,6 @@ function RecordsTab() {
     if (date) q.set("date", date);
     if (schoolId) q.set("school", schoolId);
     if (staffId) q.set("staffId", staffId);
-    if (newDeviceOnly) q.set("newDevice", "true");
     q.set("pageSize", "200");
     api
       .get<{ records: AttendanceRecord[]; total: number }>(`/api/admin/records?${q.toString()}`)
@@ -48,7 +46,7 @@ function RecordsTab() {
       .catch(() => toast("Could not load records.", true));
   }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(load, [date, schoolId, staffId, newDeviceOnly]);
+  useEffect(load, [date, schoolId, staffId]);
 
   async function deleteRecord(id: string) {
     if (!confirm("Delete this attendance record? This cannot be undone.")) return;
@@ -61,7 +59,6 @@ function RecordsTab() {
     if (date) q.set("date", date);
     if (schoolId) q.set("school", schoolId);
     if (staffId) q.set("staffId", staffId);
-    if (newDeviceOnly) q.set("newDevice", "true");
     return `/api/admin/records/export?${q.toString()}`;
   }
 
@@ -111,14 +108,6 @@ function RecordsTab() {
         </select>
         <button className="btn btn-ghost btn-sm" onClick={() => setDate("")}>
           All dates
-        </button>
-        <button
-          className="btn btn-ghost btn-sm"
-          onClick={() => setNewDeviceOnly((v) => !v)}
-          style={newDeviceOnly ? { borderColor: "var(--bad)", color: "var(--bad)" } : undefined}
-          title="Show only check-ins/outs whose PIN succeeded from a browser we hadn't seen for that staff ID before"
-        >
-          {newDeviceOnly ? "✓ " : ""}🆕 New device only
         </button>
         <span style={{ flex: 1 }} />
         <a className="btn btn-primary btn-sm" href={exportUrl()}>
@@ -173,11 +162,6 @@ function RecordsTab() {
                   {r.flagged && (
                     <span className="badge flag" style={{ marginLeft: 6 }} title="Recorded from outside this school's GPS coverage area">
                       ⚠ out of coverage
-                    </span>
-                  )}
-                  {r.newDevice && (
-                    <span className="badge flag" style={{ marginLeft: 6 }} title="The PIN was correct, but from a browser we hadn't seen succeed with this staff ID before">
-                      🆕 new device
                     </span>
                   )}
                 </td>

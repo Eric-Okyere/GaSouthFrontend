@@ -45,14 +45,14 @@ function TeacherRoster({ school }: { school: School }) {
     load();
   }
 
-  async function resetPin(t: Teacher) {
-    if (!confirm(`Reset ${t.name}'s PIN? They'll be asked to set a new one next time they check in or out.`)) return;
+  async function resetDevice(t: Teacher) {
+    if (!confirm(`Reset ${t.name}'s device? Their next check-in will bind whatever device they use then.`)) return;
     try {
-      await api.post(`/api/admin/teachers/${t.id}/reset-pin`);
-      toast("PIN reset. They'll set a new one on their next check-in.");
+      await api.post(`/api/admin/teachers/${t.id}/reset-device`);
+      toast("Device reset. A new one will be bound on their next check-in.");
       load();
     } catch (err) {
-      toast(err instanceof ApiError ? err.message : "Could not reset PIN.", true);
+      toast(err instanceof ApiError ? err.message : "Could not reset device.", true);
     }
   }
 
@@ -94,7 +94,7 @@ function TeacherRoster({ school }: { school: School }) {
               <th>Association</th>
               <th>Contact</th>
               <th>Source</th>
-              <th>PIN</th>
+              <th>Device</th>
               <th></th>
             </tr>
           </thead>
@@ -119,26 +119,18 @@ function TeacherRoster({ school }: { school: School }) {
                   <span className={`badge ${t.source === "self" ? "in" : "muted"}`}>{t.source === "self" ? "self-registered" : "admin-added"}</span>
                 </td>
                 <td>
-                  {t.hasPin ? (
-                    <span className={`badge ${t.pinLocked ? "flag" : "in"}`} title={t.pinLocked ? "Temporarily locked out after repeated wrong PINs" : "Has set a PIN"}>
-                      {t.pinLocked ? "🔒 locked" : "✓ set"}
+                  {t.deviceBound ? (
+                    <span className="badge in" title="A device is bound for this staff ID — check-ins must come from it">
+                      ✓ bound
                     </span>
                   ) : (
-                    <span className="badge muted">not set</span>
-                  )}
-                  {t.hasPin && (t.deviceCount ?? 0) > 1 && (
-                    <div
-                      style={{ fontSize: 11, color: "var(--ink-faint)", marginTop: 4 }}
-                      title="How many different browsers/phones have successfully used this PIN — worth a look if it seems high for one person."
-                    >
-                      {t.deviceCount} devices
-                    </div>
+                    <span className="badge muted">not bound</span>
                   )}
                 </td>
                 <td style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {t.hasPin && (
-                    <button className="btn btn-ghost btn-sm" onClick={() => resetPin(t)}>
-                      Reset PIN
+                  {t.deviceBound && (
+                    <button className="btn btn-ghost btn-sm" onClick={() => resetDevice(t)}>
+                      Reset Device
                     </button>
                   )}
                   <button className="btn btn-ghost btn-sm" onClick={() => removeTeacher(t.id)}>

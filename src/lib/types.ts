@@ -19,9 +19,8 @@ export interface Teacher {
   classTeaching?: string;
   association?: string;
   phoneNumber?: string;
-  hasPin?: boolean;
-  pinLocked?: boolean;
-  deviceCount?: number;
+  deviceBound?: boolean;
+  deviceBoundAt?: string | null;
 }
 
 export interface AttendanceRecord {
@@ -33,7 +32,6 @@ export interface AttendanceRecord {
   verified: boolean;
   distanceM: number | null;
   flagged: boolean;
-  newDevice: boolean;
   at: string;
   dateKey: string;
 }
@@ -44,9 +42,7 @@ export interface StatusResponse {
   next: "in" | "out" | "done";
   checkedInAt: string | null;
   checkedOutAt: string | null;
-  hasPin: boolean;
-  locked: boolean;
-  lockedUntil: string | null;
+  deviceBound: boolean;
 }
 
 export interface TodayStats {
