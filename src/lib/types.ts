@@ -144,6 +144,20 @@ export interface DirectoryTeacher {
   };
 }
 
+// One GES academic term's open ("first day back") and closing ("last day
+// of term") date. Either can be null until an admin sets it.
+export interface TermDates {
+  startDate: string | null;
+  endDate: string | null;
+}
+
+export interface TermSettings {
+  academicYear: string;
+  term1: TermDates;
+  term2: TermDates;
+  term3: TermDates;
+}
+
 export interface TeacherDetailResponse {
   teacher: DirectoryTeacher;
   attendance: {

@@ -68,6 +68,16 @@ export default function PrintSchoolQrPage({ params }: { params: Promise<{ id: st
             </div>
             <h2 style={{ fontSize: 22 }}>{state.school.name}</h2>
             <p style={{ color: "var(--ink-faint)", fontSize: 13 }}>Scan to check in / check out · Ga South Teacher Attendance</p>
+            <div style={{ maxWidth: 320 }}>
+              <p style={{ color: "var(--ink-faint)", fontSize: 12.5 }}>Phone can&apos;t scan? Open this link instead:</p>
+              <a
+                href={`${state.origin}/checkin/${state.school.id}`}
+                className="mono"
+                style={{ fontSize: 14, color: "var(--accent)", wordBreak: "break-all", display: "inline-block", marginTop: 4 }}
+              >
+                {`${state.origin}/checkin/${state.school.id}`.replace(/^https?:\/\//, "")}
+              </a>
+            </div>
             <button className="btn btn-primary no-print" onClick={() => window.print()}>
               🖨 Print
             </button>

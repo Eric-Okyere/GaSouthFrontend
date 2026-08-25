@@ -102,8 +102,13 @@ export default function DirectoryPage() {
           <div style={{ flex: 1, minWidth: 200 }}>
             <div style={{ fontWeight: 600, fontSize: 15 }}>New teacher? Register your details</div>
             <p style={{ color: "var(--ink-soft)", fontSize: 13.5, marginTop: 3 }}>
-              One form, any school — scan the code or use the link, once.
+              One form, any school — scan the code, or if your phone can&apos;t scan, open this link instead:
             </p>
+            {origin && (
+              <a href={`${origin}/register`} className="mono" style={{ display: "inline-block", marginTop: 4, fontSize: 12.5, color: "var(--accent)", wordBreak: "break-all" }}>
+                {origin.replace(/^https?:\/\//, "")}/register
+              </a>
+            )}
           </div>
           <Link className="btn btn-primary btn-sm no-print" href="/register">
             Open registration form
@@ -164,6 +169,14 @@ export default function DirectoryPage() {
             <div className="qr-wrap" style={{ width: 88, height: 88, border: "1px solid var(--line-soft)" }}>
               {origin && <QrCode value={checkinUrl(s.id)} />}
             </div>
+            {origin && (
+              <div>
+                <div style={{ fontSize: 10.5, color: "var(--ink-faint)" }}>Can&apos;t scan? Use this link:</div>
+                <a href={checkinUrl(s.id)} className="mono" style={{ fontSize: 10.5, color: "var(--accent)", wordBreak: "break-all", display: "inline-block", marginTop: 2 }}>
+                  {checkinUrl(s.id).replace(/^https?:\/\//, "")}
+                </a>
+              </div>
+            )}
             <h3 style={{ fontSize: 16, lineHeight: 1.3 }}>{s.name}</h3>
             <div className="mono" style={{ fontSize: 11, color: "var(--ink-faint)" }}>
               {s.hasAnchor ? "📍 anchored" : "no GPS anchor"}
