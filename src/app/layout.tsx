@@ -16,7 +16,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <head>
         {/* Self-hosting via next/font/google needs internet access to
             fonts.googleapis.com at BUILD time, which not every self-hosted
@@ -35,7 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body suppressHydrationWarning>
+      <body>
         <ToastProvider>{children}</ToastProvider>
         {/* Site-wide, not per-page — added once here so every route (home,
             register, check-in, every admin page) gets it automatically,

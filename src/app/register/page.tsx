@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import type { School } from "@/lib/types";
 import { Topbar } from "@/components/Topbar";
+import { getDeviceToken } from "@/lib/device";
 
 const ASSOCIATIONS = ["GNAT", "NAGRAT", "CCT-GH", "Other"];
 
@@ -85,6 +86,11 @@ function RegisterForm() {
         classTeaching: form.classTeaching.trim(),
         association,
         phoneNumber: form.phoneNumber.trim(),
+        // This phone becomes the trusted device for every check-in/out
+        // going forward (see frontend/src/lib/device.ts and the backend's
+        // registration route) — sent the same way the check-in page
+        // already sends it.
+        deviceToken: getDeviceToken(),
       });
       const schoolName = schools?.find((s) => s.id === form.school)?.name || "";
       setDone({ name: res.teacher.name, staffId: res.teacher.staffId, schoolName, updated: res.updated });
