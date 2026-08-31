@@ -8,10 +8,9 @@ import type { School } from "@/lib/types";
 import { Topbar } from "@/components/Topbar";
 
 const ASSOCIATIONS = ["GNAT", "NAGRAT", "CCT-GH", "Other"];
-// GES's basic-school class range — Basic 1–6 (primary) through Basic 9 (JHS
-// 3) covers every class a teacher at one of these schools can be assigned,
-// so there's no "Other" here the way there is for association.
-const CLASSES = ["Basic 1", "Basic 2", "Basic 3", "Basic 4", "Basic 5", "Basic 6", "Basic 7", "Basic 8", "Basic 9"];
+
+const CLASSES = ["Basic 1", "Basic 2", "Basic 3", "Basic 4", "Basic 5", "Basic 6", "Basic 7", "Basic 8", "Basic 9", "Kindergarten 1","Kindergarten 2","English Language",
+"Mathematics","Science","Social Studies","Computing","Physical Education","Creative Arts","Career Technology","French","Religious and Moral Education"];
 
 interface FormState {
   school: string;
