@@ -1,11 +1,10 @@
 // The anti-impersonation control for check-in/out: a staff ID alone can't
 // prove identity (it's printed on the school's public QR flyer), so the
-// browser a teacher registers from becomes that staff ID's trusted device —
-// every check-in/out after that must present this same token, or the
-// backend rejects it outright (see backend/src/utils/device.js,
-// routes/registration.js and routes/public.js). This module just gives
-// each browser a random, persistent token that travels with every
-// registration and check-in/out request.
+// browser a teacher first checks in from becomes that staff ID's trusted
+// device — every check-in/out after that must present this same token, or
+// the backend rejects it outright (see backend/src/utils/device.js and
+// routes/public.js). This module just gives each browser a random,
+// persistent token that travels with every check-in/out request.
 //
 // This is NOT a hardware device ID — the web has no access to one. It's
 // just a value in localStorage, so it's lost whenever a browser legitimately
