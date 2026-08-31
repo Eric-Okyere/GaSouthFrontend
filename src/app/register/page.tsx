@@ -8,6 +8,10 @@ import type { School } from "@/lib/types";
 import { Topbar } from "@/components/Topbar";
 
 const ASSOCIATIONS = ["GNAT", "NAGRAT", "CCT-GH", "Other"];
+// GES's basic-school class range — Basic 1–6 (primary) through Basic 9 (JHS
+// 3) covers every class a teacher at one of these schools can be assigned,
+// so there's no "Other" here the way there is for association.
+const CLASSES = ["Basic 1", "Basic 2", "Basic 3", "Basic 4", "Basic 5", "Basic 6", "Basic 7", "Basic 8", "Basic 9"];
 
 interface FormState {
   school: string;
@@ -146,7 +150,14 @@ function RegisterForm() {
 
                 <div className="field">
                   <label htmlFor="classTeaching">Class teaching</label>
-                  <input id="classTeaching" type="text" placeholder="e.g. JHS 2, or Primary 4" value={form.classTeaching} onChange={(e) => set("classTeaching", e.target.value)} />
+                  <select id="classTeaching" value={form.classTeaching} onChange={(e) => set("classTeaching", e.target.value)}>
+                    <option value="">Select class…</option>
+                    {CLASSES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
                   <span className="hint">Leave blank if you don&apos;t teach a specific class.</span>
                 </div>
 

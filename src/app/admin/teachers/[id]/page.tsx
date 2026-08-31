@@ -29,6 +29,9 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
 // pre-fills the free-text field with whatever's on file, so opening the
 // form and saving without changes never silently rewrites their answer.
 const ASSOCIATIONS = ["GNAT", "NAGRAT", "CCT-GH", "Other"];
+// Same GES basic-school class range the registration form offers — kept in
+// sync manually, same as ASSOCIATIONS above (see register/page.tsx).
+const CLASSES = ["Basic 1", "Basic 2", "Basic 3", "Basic 4", "Basic 5", "Basic 6", "Basic 7", "Basic 8", "Basic 9"];
 
 interface EditFormState {
   name: string;
@@ -128,7 +131,21 @@ function EditTeacherForm({
         </div>
         <div className="field">
           <label htmlFor="edit-classTeaching">Class teaching</label>
-          <input id="edit-classTeaching" type="text" value={form.classTeaching} onChange={(e) => set("classTeaching", e.target.value)} />
+          <select id="edit-classTeaching" value={form.classTeaching} onChange={(e) => set("classTeaching", e.target.value)}>
+            <option value="">Select class…</option>
+            {/* A teacher registered before this became a dropdown may have a
+                free-text value (e.g. "JHS 2") that isn't one of the presets —
+                keep it selectable so opening and saving the form without
+                touching this field doesn't silently blank it out. */}
+            {form.classTeaching && !CLASSES.includes(form.classTeaching) && (
+              <option value={form.classTeaching}>{form.classTeaching} (on file)</option>
+            )}
+            {CLASSES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="field">
           <label htmlFor="edit-association">Teachers&apos; association</label>
