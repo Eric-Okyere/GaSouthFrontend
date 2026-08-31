@@ -20,7 +20,12 @@ function LoginForm() {
     setError(null);
     try {
       await api.post<{ admin: AdminUser }>("/api/admin/auth/login", { username, password });
-      router.replace(params.get("next") || "/admin");
+      // A signed-out visitor who got bounced here from a specific gated page
+      // (proxy.ts sets `?next=`) still lands back on that page — but a
+      // plain sign-in (clicking "Admin" from the Topbar, or opening
+      // /admin/login directly) now goes to the home page rather than
+      // straight into the admin dashboard.
+      router.replace(params.get("next") || "/");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not sign in. Please try again.");
     } finally {
