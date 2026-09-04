@@ -32,7 +32,13 @@ export function Topbar() {
         background: "var(--surface)",
       }}
     >
-      <Link href="/" style={{ display: "flex", alignItems: "baseline", gap: 9, textDecoration: "none", color: "var(--ink)" }}>
+      {/* "/" is the admin dashboard and requires a signed-in session — a
+          signed-out visitor (a teacher on the check-in/register/welcome
+          pages) following this logo link there would just bounce straight
+          to the admin sign-in page, which isn't for them. Route by whether
+          an admin session is actually present, same signal already used for
+          the "Admin" nav link's styling above. */}
+      <Link href={admin ? "/" : "/welcome"} style={{ display: "flex", alignItems: "baseline", gap: 9, textDecoration: "none", color: "var(--ink)" }}>
         <span
           style={{
             display: "inline-flex",

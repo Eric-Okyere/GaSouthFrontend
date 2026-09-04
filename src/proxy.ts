@@ -8,12 +8,13 @@ import type { NextRequest } from "next/server";
 // what actually protects the data.
 //
 // District-admin-only by default (per explicit instruction): the only pages
-// a teacher can reach without an admin session are self-registration and
-// their own school's check-in page (both public and unauthenticated,
-// reached by scanning the QR code posted at the school — a teacher never
-// browses the rest of the site to get there). Everything else, including
-// the home/school-directory page, requires a signed-in admin.
-const PUBLIC_PATHS = [/^\/register(\/.*)?$/, /^\/checkin\/.+/];
+// a teacher can reach without an admin session are self-registration, their
+// own school's check-in page (both public and unauthenticated, reached by
+// scanning the QR code posted at the school — a teacher never browses the
+// rest of the site to get there), and the welcome page they land on right
+// after registering. Everything else, including the home/school-directory
+// page, requires a signed-in admin.
+const PUBLIC_PATHS = [/^\/register(\/.*)?$/, /^\/checkin\/.+/, /^\/welcome(\/.*)?$/];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

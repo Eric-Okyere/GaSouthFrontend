@@ -14,6 +14,7 @@ type Step = "loading" | "notfound" | "identify" | "not-registered" | "action" | 
 interface ActionResult {
   type: "in" | "out";
   at: string;
+  arrivalStatus: "late" | "early" | null;
 }
 
 export default function CheckinPage({ params }: { params: Promise<{ schoolId: string }> }) {
@@ -94,6 +95,17 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
     setError(null);
     setSaving(true);
     const coords = await getPosition(8000);
+    // Location is now mandatory, not just used when available — without a
+    // fix there's nothing to compare against the school's GPS anchor, so
+    // the request never even goes to the server (which would reject it
+    // anyway; this just gives a clearer, immediate message).
+    if (!coords) {
+      setError(
+        "We need your location to check in or out. Please allow this site to access your location in your browser settings and try again."
+      );
+      setSaving(false);
+      return;
+    }
     try {
       const res = await api.post<{
         type: "in" | "out";
@@ -102,13 +114,14 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
         verified: boolean;
         flagged: boolean;
         distanceM: number | null;
+        arrivalStatus: "late" | "early" | null;
       }>(`/api/schools/${schoolId}/attendance`, {
         staffId,
-        lat: coords?.latitude,
-        lng: coords?.longitude,
+        lat: coords.latitude,
+        lng: coords.longitude,
         deviceToken: getDeviceToken(),
       });
-      setResult({ type: res.type, at: res.at });
+      setResult({ type: res.type, at: res.at, arrivalStatus: res.arrivalStatus });
       setStep("done");
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
@@ -144,8 +157,8 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
           {step === "notfound" && (
             <>
               <div className="error-box">This QR code doesn’t match a known school. Please contact the district admin.</div>
-              <Link className="btn btn-ghost btn-block" style={{ marginTop: 16 }} href="/">
-                ← Back to school directory
+              <Link className="btn btn-ghost btn-block" style={{ marginTop: 16 }} href="/welcome">
+                ← Back to welcome page
               </Link>
             </>
           )}
@@ -258,7 +271,15 @@ export default function CheckinPage({ params }: { params: Promise<{ schoolId: st
                   <div className="mono" style={{ fontSize: 34, fontWeight: 500, marginTop: 4 }}>
                     {formatTime(result.at)}
                   </div>
-                  <Link className="btn btn-ghost btn-block" style={{ marginTop: 18 }} href="/">
+                  {result.arrivalStatus && (
+                    <span
+                      className={`badge ${result.arrivalStatus === "late" ? "out" : "in"}`}
+                      style={{ marginTop: 10, display: "inline-block" }}
+                    >
+                      {result.arrivalStatus === "late" ? "Late" : "Early"}
+                    </span>
+                  )}
+                  <Link className="btn btn-ghost btn-block" style={{ marginTop: 18 }} href="/welcome">
                     Done
                   </Link>
                 </>

@@ -8,8 +8,14 @@ import { formatTime, todayStr } from "@/lib/format";
 import { AdminShell } from "@/components/AdminShell";
 import { useToast } from "@/components/Toast";
 
-type SortField = "name" | "staffId" | "school";
+type SortField = "name" | "staffId" | "school" | "arrival";
 type SortDir = "asc" | "desc";
+// Only meaningful when a date is set (see `date` state below, which is what
+// populates attendanceStatus per teacher). "all" shows everyone; the rest
+// isolate one bucket — the two arrival ones are what round 22 asked for
+// ("sort out late and teachers who come early"), "present"/"absent" reuse
+// the same status the column already shows.
+type ArrivalFilter = "all" | "early" | "late" | "present" | "absent";
 
 function SortHeader({
   label,
@@ -47,6 +53,7 @@ function TeachersTab() {
   const [teachers, setTeachers] = useState<DirectoryTeacher[] | null>(null);
   const [query, setQuery] = useState("");
   const [activeOnly, setActiveOnly] = useState(false);
+  const [arrivalFilter, setArrivalFilter] = useState<ArrivalFilter>("all");
   const [sort, setSort] = useState<SortField>("name");
   const [dir, setDir] = useState<SortDir>("asc");
   const toast = useToast();
@@ -87,6 +94,15 @@ function TeachersTab() {
     const q = query.trim().toLowerCase();
     const rows = teachers.filter((t) => {
       if (activeOnly && !t.active) return false;
+      // Only applies once a date is selected (that's the only time
+      // attendanceStatus is attached at all) — see the `date &&` guard.
+      if (date && arrivalFilter !== "all") {
+        const status = t.attendanceStatus;
+        if (arrivalFilter === "present" && !status?.checkedInAt) return false;
+        if (arrivalFilter === "absent" && status?.checkedInAt) return false;
+        if (arrivalFilter === "early" && status?.arrivalStatus !== "early") return false;
+        if (arrivalFilter === "late" && status?.arrivalStatus !== "late") return false;
+      }
       if (!q) return true;
       return (
         t.name.toLowerCase().includes(q) ||
@@ -94,10 +110,21 @@ function TeachersTab() {
         (t.school?.name || "").toLowerCase().includes(q)
       );
     });
-    const key = (t: DirectoryTeacher) => (sort === "school" ? t.school?.name || "" : sort === "staffId" ? t.staffId : t.name);
-    rows.sort((a, b) => key(a).localeCompare(key(b)) * (dir === "asc" ? 1 : -1));
+    if (sort === "arrival") {
+      // Absent (no check-in on file for the date) sorts last regardless of
+      // direction — there's no arrival time to rank against early/late.
+      const rank = (t: DirectoryTeacher) => {
+        const status = t.attendanceStatus;
+        if (!status?.checkedInAt) return dir === "asc" ? 2 : -2;
+        return status.arrivalStatus === "late" ? 1 : 0;
+      };
+      rows.sort((a, b) => (rank(a) - rank(b)) * (dir === "asc" ? 1 : -1));
+    } else {
+      const key = (t: DirectoryTeacher) => (sort === "school" ? t.school?.name || "" : sort === "staffId" ? t.staffId : t.name);
+      rows.sort((a, b) => key(a).localeCompare(key(b)) * (dir === "asc" ? 1 : -1));
+    }
     return rows;
-  }, [teachers, query, activeOnly, sort, dir]);
+  }, [teachers, query, activeOnly, arrivalFilter, date, sort, dir]);
 
   return (
     <>
@@ -143,6 +170,20 @@ function TeachersTab() {
           <input type="checkbox" checked={activeOnly} onChange={(e) => setActiveOnly(e.target.checked)} />
           Active only
         </label>
+        {date && (
+          <select
+            value={arrivalFilter}
+            onChange={(e) => setArrivalFilter(e.target.value as ArrivalFilter)}
+            aria-label={`Filter by ${date === todayStr() ? "today's" : date + "'s"} status`}
+            style={{ border: "1.5px solid var(--line)", background: "var(--surface)", borderRadius: 9, padding: "9px 11px", minHeight: 40, fontSize: 13.5 }}
+          >
+            <option value="all">All ({date === todayStr() ? "today" : date})</option>
+            <option value="early">Early only</option>
+            <option value="late">Late only</option>
+            <option value="present">Present (any time)</option>
+            <option value="absent">Absent</option>
+          </select>
+        )}
         <span style={{ flex: 1 }} />
         <span style={{ fontSize: 12.5, color: "var(--ink-faint)" }}>
           {teachers ? `${filtered.length} of ${teachers.length} teachers` : "Loading…"}
@@ -158,7 +199,7 @@ function TeachersTab() {
               <SortHeader label="School" field="school" sort={sort} dir={dir} onSort={onSort} />
               <th>Roster</th>
               <th>Device</th>
-              {date && <th>{date === todayStr() ? "Today" : date}</th>}
+              {date && <SortHeader label={date === todayStr() ? "Today" : date} field="arrival" sort={sort} dir={dir} onSort={onSort} />}
             </tr>
           </thead>
           <tbody>
@@ -187,8 +228,11 @@ function TeachersTab() {
                 {date && (
                   <td>
                     {t.attendanceStatus?.checkedInAt ? (
-                      <span className="badge in" title={`Checked in ${formatTime(t.attendanceStatus.checkedInAt)}`}>
-                        present
+                      <span
+                        className={`badge ${t.attendanceStatus.arrivalStatus === "late" ? "out" : "in"}`}
+                        title={`Checked in ${formatTime(t.attendanceStatus.checkedInAt)}`}
+                      >
+                        {t.attendanceStatus.arrivalStatus === "late" ? "Late" : "Early"}
                       </span>
                     ) : (
                       <span className="badge flag">absent</span>

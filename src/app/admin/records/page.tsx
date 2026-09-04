@@ -126,13 +126,14 @@ function RecordsTab() {
               <th>Staff ID</th>
               <th>Type</th>
               <th>Distance</th>
+              <th>Hours</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             {records && records.length === 0 && (
               <tr>
-                <td colSpan={8} className="empty-state">
+                <td colSpan={9} className="empty-state">
                   No records match these filters.
                 </td>
               </tr>
@@ -159,6 +160,15 @@ function RecordsTab() {
                 <td className="mono">{r.staffId}</td>
                 <td>
                   <span className={`badge ${r.type}`}>{r.type === "in" ? "Check-in" : "Check-out"}</span>
+                  {r.arrivalStatus && (
+                    <span
+                      className={`badge ${r.arrivalStatus === "late" ? "out" : "in"}`}
+                      style={{ marginLeft: 6 }}
+                      title="7:30am Africa/Accra is the district-wide cutoff"
+                    >
+                      {r.arrivalStatus === "late" ? "Late" : "Early"}
+                    </span>
+                  )}
                   {r.flagged && (
                     <span className="badge flag" style={{ marginLeft: 6 }} title="Recorded from outside this school's GPS coverage area">
                       ⚠ out of coverage
@@ -166,6 +176,9 @@ function RecordsTab() {
                   )}
                 </td>
                 <td className="mono">{r.distanceM != null ? `${r.distanceM}m` : "—"}</td>
+                <td className="mono" title={r.type === "in" ? "Only shown on check-outs, measured since the matching check-in" : undefined}>
+                  {r.hoursSpent != null ? `${r.hoursSpent.toFixed(2)}h` : "—"}
+                </td>
                 <td>
                   <button className="btn btn-ghost btn-sm" onClick={() => deleteRecord(r.id)}>
                     Delete

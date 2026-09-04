@@ -224,6 +224,22 @@ function SchoolsTab() {
 
   return (
     <>
+      <div
+        className="card"
+        style={{ marginBottom: 16, padding: "12px 16px", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}
+      >
+        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-soft)" }}>Export CSV:</span>
+        <a className="btn btn-ghost btn-sm" href="/api/admin/schools/export">
+          ⬇ Schools only
+        </a>
+        <a className="btn btn-ghost btn-sm" href="/api/admin/export/all">
+          ⬇ All schools + their teachers
+        </a>
+        <a className="btn btn-ghost btn-sm" href="/api/admin/teachers/export">
+          ⬇ All teachers
+        </a>
+      </div>
+
       <div className="card" style={{ marginBottom: 16 }}>
         {schools?.map((s) => (
           <div key={s.id} style={{ borderBottom: "1px solid var(--line-soft)" }}>
@@ -242,6 +258,16 @@ function SchoolsTab() {
                 <Link className="btn btn-ghost btn-sm" href={`/admin/schools/${s.id}/summary`}>
                   📊 Summary
                 </Link>
+                <a className="btn btn-ghost btn-sm" href={`/api/admin/teachers/export?school=${s.id}`}>
+                  ⬇ Export teachers CSV
+                </a>
+                <a
+                  className="btn btn-ghost btn-sm"
+                  href={`/api/admin/export/all?school=${s.id}`}
+                  title="This school's own details plus its full teacher roster, combined in one CSV"
+                >
+                  ⬇ Export school + roster CSV
+                </a>
                 <button className="btn btn-ghost btn-sm" onClick={() => captureAnchor(s)} disabled={capturingId === s.id}>
                   {capturingId === s.id ? "Locating…" : `📍 ${s.anchorLat != null ? "Re-capture" : "Capture"} GPS`}
                 </button>

@@ -39,6 +39,15 @@ export interface AttendanceRecord {
   flagged: boolean;
   at: string;
   dateKey: string;
+  // Elapsed time (hours, 2dp) since this person's matching check-in the same
+  // day at the same school. Only ever set on a check-out row — a check-in
+  // row has nothing to measure yet — and null when no matching check-in is
+  // on file (e.g. it was deleted, or this is a legacy record).
+  hoursSpent: number | null;
+  // 'late' if this check-in was after 7:30am (Africa/Accra), 'early'
+  // otherwise. Only ever set on a check-in row — nothing to judge "on time"
+  // about a check-out — so this is always null for type "out".
+  arrivalStatus: "late" | "early" | null;
 }
 
 export interface StatusResponse {
@@ -146,6 +155,9 @@ export interface DirectoryTeacher {
     date: string;
     checkedInAt: string | null;
     checkedOutAt: string | null;
+    // 'late' if checkedInAt was after 7:30am (Africa/Accra), 'early'
+    // otherwise, null when there's no check-in on file for the date.
+    arrivalStatus: "late" | "early" | null;
   };
 }
 
