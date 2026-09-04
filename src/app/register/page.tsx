@@ -80,7 +80,11 @@ function RegisterForm() {
 
     setBusy(true);
     try {
-      const res = await api.post<{ updated: boolean; teacher: { name: string; staffId: string } }>("/api/register", {
+      // A staff ID can only ever be registered once now — a resubmission
+      // for one already on file is rejected (409) rather than treated as
+      // an update, so a successful response here is always a brand-new
+      // registration; see backend/src/routes/registration.js.
+      const res = await api.post<{ teacher: { name: string; staffId: string } }>("/api/register", {
         school: form.school,
         name: form.name.trim(),
         staffId: form.staffId.trim(),
@@ -99,7 +103,6 @@ function RegisterForm() {
         name: res.teacher.name,
         school: school?.name || "",
         code: school?.code || school?.id || form.school,
-        updated: String(res.updated),
       });
       router.push(`/welcome?${q.toString()}`);
       // Deliberately no `finally` here — busy stays true (button stays

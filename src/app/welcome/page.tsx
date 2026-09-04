@@ -10,7 +10,6 @@ function WelcomeContent() {
   const name = params.get("name")?.trim() || "";
   const school = params.get("school")?.trim() || "";
   const code = params.get("code")?.trim() || "";
-  const updated = params.get("updated") === "true";
 
   const firstName = name.split(" ")[0] || "";
   const checkinHref = code ? `/checkin/${code}` : null;
@@ -24,13 +23,12 @@ function WelcomeContent() {
             <>
               <div className="status-pill in" style={{ display: "inline-flex" }}>
                 <span className="dot" />
-                {updated ? "Details updated" : "Registered"}
+                Registered
               </div>
               <h2 style={{ fontSize: 24, marginTop: 16 }}>Welcome, {firstName}!</h2>
               <p style={{ color: "var(--ink-soft)", fontSize: 14.5, marginTop: 8 }}>
-                {updated ? "Your details at " : "You're on record at "}
-                {school ? <strong>{school}</strong> : "your school"} {updated ? "have been updated" : "have been saved"}.
-                Use your school&apos;s QR code (or the link below) to check in and out every school day.
+                You&apos;re on record at {school ? <strong>{school}</strong> : "your school"}. Use your school&apos;s QR code
+                (or the link below) to check in and out every school day.
               </p>
 
               {checkinHref ? (
